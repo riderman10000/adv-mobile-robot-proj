@@ -237,15 +237,19 @@ def print_optimal_path(agent: GridRobot, env):
     path_grids = []
     total_reward = 0
 
+    frame_count = 0
+    frame = env.render() 
+    plt.imsave(f"./media/frame {frame_count}.png", frame)
     while not done:
+        frame_count += 1 
         agent_coord = tuple(np.asarray(obs["agent"], dtype=np.int64))
         path_grids.append(agent_coord[0] * 4 + agent_coord[1] + 1)  # convert (row,col) to grid number
 
         action = agent.get_action(obs)
         obs, reward, terminated, truncated, info = env.step(int(action))
         
-        env.render() 
-        time.sleep(1)
+        frame = env.render()
+        plt.imsave(f"./media/frame {frame_count}.png", frame)
 
         total_reward += reward
         done = terminated or truncated
@@ -329,7 +333,7 @@ if __name__ == "__main__":
         size=4,
         traps=traps,
         goal=[2, 3],
-        render_mode="human",
+        render_mode="rgb_array",
         max_episode_steps=max_episode_steps,
     )
 
