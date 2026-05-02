@@ -4,6 +4,7 @@ import os
 import yaml 
 import traceback 
 import matplotlib.pyplot as plt
+import time 
 
 import numpy as np 
 import gymnasium as gym
@@ -242,8 +243,14 @@ def print_optimal_path(agent: GridRobot, env):
 
         action = agent.get_action(obs)
         obs, reward, terminated, truncated, info = env.step(int(action))
+        
+        env.render() 
+        time.sleep(1)
+
         total_reward += reward
         done = terminated or truncated
+
+    env.close() 
 
     # append the final position
     final_coord = tuple(np.asarray(obs["agent"], dtype=np.int64))
@@ -337,6 +344,7 @@ if __name__ == "__main__":
             x[:rang_value], value[:rang_value, i], 
             label=f'grid(9, {i})', color=colors[i],
             )
+    plt.grid() 
     plt.legend()
     plt.xticks(np.arange(0, len(x[:rang_value])+1, 500))
     plt.xlabel('Episodes')
@@ -346,4 +354,13 @@ if __name__ == "__main__":
 
 
     print_optimal_path(agent, test_env)
+    test_env = gym.make(
+        'gymnasium_env/GridEnv-v0',
+        size=4,
+        traps=traps,
+        goal=[2, 3],
+        render_mode="human",
+        max_episode_steps=max_episode_steps,
+    )
+
     test_agent(agent, test_env, num_episodes=200) 
