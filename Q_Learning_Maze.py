@@ -1,6 +1,9 @@
+# Group Members: Iffat Fahimda, Rhimesh Lwagun, and Vanessa Young
+
 import os 
 import yaml 
 import traceback 
+import matplotlib.pyplot as plt
 
 import numpy as np 
 import gymnasium as gym
@@ -16,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO, 
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
-
+q9_key = (2, 0)  # Grid #9 (row 2, col 0)
 
 train = True 
 experiment = "experiment"
@@ -43,9 +46,9 @@ traps = [
 
 env = gym.make(
     'gymnasium_env/GridEnv-v0',
-    size=10,
+    size=4,
     traps=traps,
-    goal=[3, 3],
+    goal=[2, 3],
     max_episode_steps=max_episode_steps,
 )
 env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
@@ -102,6 +105,8 @@ def train_fn(
                     # agent.save_model()
             # reduce exploration rate (agent become less random over time) 
             agent.decay_epsilon() 
+
+            agent.hist()
 
     except KeyboardInterrupt:
         logging.error(f"Keyboard Interruption")
@@ -163,6 +168,97 @@ def train_fn(
     plt.tight_layout() 
     plt.show() 
 
+
+
+def draw_episode_path(path, size, traps=None, goal=None):
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    ax.set_xlim(-0.5, size - 0.5)
+    ax.set_ylim(-0.5, size - 0.5)
+    ax.set_xticks(range(size))
+    ax.set_yticks(range(size))
+    ax.grid(True)
+    ax.set_aspect("equal")
+    ax.invert_yaxis()
+
+    # Draw traps
+    if traps is not None:
+        for trap in traps:
+            r, c = trap
+            ax.add_patch(
+                plt.Rectangle(
+                    (c - 0.5, r - 0.5),
+                    1,
+                    1,
+                    alpha=0.4
+                )
+            )
+            ax.text(c, r, "T", ha="center", va="center")
+
+    # Draw goal
+    if goal is not None:
+        r, c = goal
+        ax.add_patch(
+            plt.Rectangle(
+                (c - 0.5, r - 0.5),
+                1,
+                1,
+                alpha=0.4
+            )
+        )
+        ax.text(c, r, "G", ha="center", va="center")
+
+    # Convert path from [row, col] to plotting x=col, y=row
+    xs = [p[1] for p in path]
+    ys = [p[0] for p in path]
+
+    ax.plot(xs, ys, marker="o", linewidth=2)
+
+    ax.scatter(xs[0], ys[0], s=120, marker="s", label="Start")
+    ax.scatter(xs[-1], ys[-1], s=120, marker="*", label="End")
+
+    for i, (x, y) in enumerate(zip(xs, ys)):
+        ax.text(x, y, str(i), fontsize=8, ha="left", va="bottom")
+
+    ax.set_title("Episode Path")
+    ax.legend()
+    plt.show()
+
+
+
+def print_optimal_path(agent: GridRobot, env):
+    old_epsilon = agent.epsilon
+    obs, info = env.reset(options={"start": np.array([0, 0])})
+    agent.epsilon = 0.0  # pure exploitation, no randomness
+
+    # obs, info = env.reset()
+    done = False
+    path_grids = []
+    total_reward = 0
+
+    while not done:
+        agent_coord = tuple(np.asarray(obs["agent"], dtype=np.int64))
+        path_grids.append(agent_coord[0] * 4 + agent_coord[1] + 1)  # convert (row,col) to grid number
+
+        action = agent.get_action(obs)
+        obs, reward, terminated, truncated, info = env.step(int(action))
+        total_reward += reward
+        done = terminated or truncated
+
+    # append the final position
+    final_coord = tuple(np.asarray(obs["agent"], dtype=np.int64))
+    path_grids.append(final_coord[0] * 4 + final_coord[1] + 1)
+
+    print("\n" + "="*50)
+    print("Learned path from Grid #1 to Grid #12:")
+    print(" -> ".join([f"Grid #{g}" for g in path_grids]))
+    print(f"Total reward: {total_reward}")
+    print("="*50 + "\n")
+
+    agent.epsilon = old_epsilon
+    env.close()
+
+
 # test the trained agent 
 def test_agent(agent: GridRobot, env, num_episodes=5):
     total_rewards = []
@@ -223,10 +319,31 @@ if __name__ == "__main__":
     # Visualization/testing environment
     test_env = gym.make(
         'gymnasium_env/GridEnv-v0',
-        size=10,
+        size=4,
         traps=traps,
-        goal=[3, 3],
+        goal=[2, 3],
         render_mode="human",
         max_episode_steps=max_episode_steps,
     )
+
+    colors = ['red', 'blue', 'green', 'orange']
+    v =[ _[q9_key] for _ in agent.q_values_hist]
+    value = np.array(v)
+    x = range(value.shape[0])
+
+    rang_value = 5000
+    for i in range(4):
+        plt.plot(
+            x[:rang_value], value[:rang_value, i], 
+            label=f'grid(9, {i})', color=colors[i],
+            )
+    plt.legend()
+    plt.xticks(np.arange(0, len(x[:rang_value])+1, 500))
+    plt.xlabel('Episodes')
+    plt.ylabel('Value')
+    plt.title('Q-value over Episodes')
+    plt.show()
+
+
+    print_optimal_path(agent, test_env)
     test_agent(agent, test_env, num_episodes=200) 

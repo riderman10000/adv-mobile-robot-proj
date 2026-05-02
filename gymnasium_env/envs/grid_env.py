@@ -106,16 +106,20 @@ class GridEnvironment(gym.Env):
         """
         super().reset(seed=seed) 
         self.current_step = 0 
+        self.is_goal = self._terminated
 
-        while True: 
+        while True and (type(options) == type(None)): 
             # randomly place the robot on the grid 
             self.robot_location = self.np_random.integers(
                 0, self.size, size=2, dtype=np.int64
             )
 
             # check if the starting spawn on the goal and traps 
-            if not (self._terminated() and self._is_trap()):
+            if not (self.is_goal() or self._is_trap()):
                 break 
+        
+        if (type(options) != type(None)): 
+            self.robot_location = options['start']
 
         observation = self._get_obs()
         info = self._get_info() 

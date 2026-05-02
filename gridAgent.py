@@ -48,7 +48,9 @@ class GridRobot:
            lambda: np.zeros(env.action_space.n) 
         )
 
+        # eta 
         self.lr = learning_rate 
+        # beta
         self.discount_factor = discount_factor 
 
         # exploration parameters 
@@ -58,6 +60,8 @@ class GridRobot:
 
         # track learning progress 
         self.training_error = [] 
+
+        self.q_values_hist = [] 
 
     def get_action(
         self, obs: tuple[int, int, bool]
@@ -115,3 +119,6 @@ class GridRobot:
         reduce exploration rate after each episode.
         """
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
+
+    def hist(self):
+        self.q_values_hist.append(self.q_values.copy())
