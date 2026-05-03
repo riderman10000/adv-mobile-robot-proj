@@ -153,6 +153,32 @@ class GridEnvironment(gym.Env):
             ) for trap in self.traps 
         )
 
+    def _sample_stochastic_action(self, action):
+        """
+        Probability transition model:
+        80% intended action,
+        10% one perpendicular direction,
+        10% other perpendicular direction.
+        """
+
+        if action == Action.RIGHT.value or action == Action.LEFT.value:
+            possible_actions = [
+                action,
+                Action.UP.value,
+                Action.DOWN.value,
+            ]
+
+        elif action == Action.UP.value or action == Action.DOWN.value:
+            possible_actions = [
+                action,
+                Action.LEFT.value,
+                Action.RIGHT.value,
+            ]
+
+        probabilities = [0.8, 0.1, 0.1]
+
+        return self.np_random.choice(possible_actions, p=probabilities)
+
     def step(self, action): 
         """
         Execute one timestep within the environment 
@@ -166,8 +192,12 @@ class GridEnvironment(gym.Env):
 
         old_location = self.robot_location.copy() 
 
+        # sample actual action using probability transition model
+        actual_action = self._sample_stochastic_action(action)
         # direction to movement 
-        direction = self.action_to_direction[action]
+        direction = self.action_to_direction[actual_action]
+
+
 
         # update agent position, ensuring it says within grid bounds 
         self.robot_location = np.clip(
@@ -187,7 +217,9 @@ class GridEnvironment(gym.Env):
         info = self._get_info()
         info["no_movement"] = no_movement 
         info["step"] = self.current_step 
-    
+        info["intended_action"] = action
+        info["actual_action"] = actual_action
+        
         return (
             observation, reward, terminated, 
             truncated, info) 

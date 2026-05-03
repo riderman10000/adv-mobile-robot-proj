@@ -346,7 +346,7 @@ if __name__ == "__main__":
     for i in range(4):
         plt.plot(
             x[:rang_value], value[:rang_value, i], 
-            label=f'grid(9, {i})', color=colors[i],
+            label=f'Q(9, {i})', color=colors[i],
             )
     plt.grid() 
     plt.legend()
