@@ -13,7 +13,7 @@ training:
   optimizer: adam 
   
   # rl specific
-  n_episodes: 10000 # 100_000
+  n_episodes: 20000 # 100_000
   start_epsilon: 1.0
   final_epsilon: 0.1
   max_episode_steps: 500 

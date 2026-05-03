@@ -74,7 +74,8 @@ def train_fn(
         pbar = tqdm(range(n_episodes), desc='training')
         for episode in pbar:
             # start with initial state 
-            obs, info = env.reset() 
+            # obs, info = env.reset() 
+            obs, info = env.reset(options={"start": np.array([0, 0])})
             done = False 
             episode_step = 0 
 
@@ -279,7 +280,9 @@ def test_agent(agent: GridRobot, env, num_episodes=5):
 
     try:
         for episode in range(num_episodes):
-            obs, info = env.reset()
+            # obs, info = env.reset()
+            obs, info = env.reset(options={"start": np.array([0, 0])})
+
             episode_reward = 0
             done = False
 

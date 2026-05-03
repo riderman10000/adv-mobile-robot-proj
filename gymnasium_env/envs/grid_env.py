@@ -196,9 +196,7 @@ class GridEnvironment(gym.Env):
         actual_action = self._sample_stochastic_action(action)
         # direction to movement 
         direction = self.action_to_direction[actual_action]
-
-
-
+        
         # update agent position, ensuring it says within grid bounds 
         self.robot_location = np.clip(
             self.robot_location + direction, 0, self.size - 1 
@@ -219,7 +217,7 @@ class GridEnvironment(gym.Env):
         info["step"] = self.current_step 
         info["intended_action"] = action
         info["actual_action"] = actual_action
-        
+
         return (
             observation, reward, terminated, 
             truncated, info) 
